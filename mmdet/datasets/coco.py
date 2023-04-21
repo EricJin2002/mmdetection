@@ -148,6 +148,7 @@ class CocoDataset(BaseDetDataset):
                 instance['ignore_flag'] = 1
             else:
                 instance['ignore_flag'] = 0
+            instance['ignore_flag'] = 0
             instance['bbox'] = bbox
             instance['bbox_label'] = self.cat2label[ann['category_id']]
 

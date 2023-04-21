@@ -338,8 +338,18 @@ class DetInferencer(BaseInferencer):
         inputs = self.preprocess(
             ori_inputs, batch_size=batch_size, **preprocess_kwargs)
 
+        from mmengine.structures import InstanceData
+        from mmcv.transforms import to_tensor
+        proposals = InstanceData(
+            labels = to_tensor(np.array((0,), dtype=np.int64)), # 可以不加
+            bboxes = to_tensor(np.array(((385.3159, 335.9352, 860.2880, 719.0645),), dtype=np.float32)),
+            scores = to_tensor(np.array((0.99,), dtype=np.float32)))
+
         results_dict = {'predictions': [], 'visualization': []}
         for ori_inputs, data in track(inputs, description='Inference'):
+            data['data_samples'][0].proposals = proposals
+        # results_dict = {'predictions': [], 'visualization': []}
+        # for ori_inputs, data in track(inputs, description='Inference'):
             preds = self.forward(data, **forward_kwargs)
             visualization = self.visualize(
                 ori_inputs,
