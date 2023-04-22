@@ -238,6 +238,10 @@ class TwoStageDetector(BaseDetector):
         results_list = self.roi_head.predict(
             x, rpn_results_list, batch_data_samples, rescale=rescale)
 
+        # print("batch_data_samples", batch_data_samples)
+        # print("results_list", results_list)
+        # assert 0
+
         batch_data_samples = self.add_pred_to_datasample(
             batch_data_samples, results_list)
         return batch_data_samples
