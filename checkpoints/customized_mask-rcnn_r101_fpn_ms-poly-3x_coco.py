@@ -1,4 +1,5 @@
 custom_imports = dict(imports=['checkpoints.custom_transforms'], allow_failed_imports=False)
+load_from = 'checkpoints/mask_rcnn_r101_fpn_mstrain-poly_3x_coco_20210524_200244-5675c317.pth'
 
 default_scope = 'mmdet'
 default_hooks = dict(
@@ -35,6 +36,7 @@ train_pipeline = [
         type='RandomResize', scale=[(1333, 640), (1333, 800)],
         keep_ratio=True),
     dict(type='RandomFlip', prob=0.5),
+    dict(type='LoadProposalsFromAnnotations'),
     dict(type='PackDetInputs')
 ]
 test_pipeline = [
@@ -45,6 +47,7 @@ test_pipeline = [
         with_bbox=True,
         with_mask=True,
         poly2mask=True),
+    dict(type='LoadProposalsFromAnnotations'),
     dict(
         type='PackDetInputs',
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
@@ -62,8 +65,8 @@ train_dataloader = dict(
         dataset=dict(
             type='CocoDataset',
             data_root='..',
-            ann_file='dataset_info_coco.json',
-            data_prefix=dict(img='train2017/'),
+            ann_file='train_dataset_info_coco.json',
+            data_prefix=dict(img=''),
             filter_cfg=dict(filter_empty_gt=True, min_size=32),
             pipeline=[
                 dict(type='LoadImageFromFile', backend_args=None),
@@ -77,6 +80,7 @@ train_dataloader = dict(
                     scale=[(1333, 640), (1333, 800)],
                     keep_ratio=True),
                 dict(type='RandomFlip', prob=0.5),
+                dict(type='LoadProposalsFromAnnotations'),
                 dict(type='PackDetInputs')
             ],
             backend_args=None)))
@@ -89,7 +93,7 @@ val_dataloader = dict(
     dataset=dict(
         type='CocoDataset',
         data_root='..',
-        ann_file='dataset_info_coco.json',
+        ann_file='val_dataset_info_coco.json',
         data_prefix=dict(img=''),
         test_mode=True,
         pipeline=[
@@ -100,6 +104,7 @@ val_dataloader = dict(
                 with_bbox=True,
                 with_mask=True,
                 poly2mask=True),
+            dict(type='LoadProposalsFromAnnotations'),
             dict(
                 type='PackDetInputs',
                 meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
@@ -115,7 +120,7 @@ test_dataloader = dict(
     dataset=dict(
         type='CocoDataset',
         data_root='..',
-        ann_file='dataset_info_coco.json',
+        ann_file='test_dataset_info_coco.json',
         data_prefix=dict(img=''),
         test_mode=True,
         pipeline=[
@@ -135,14 +140,15 @@ test_dataloader = dict(
         backend_args=None))
 val_evaluator = dict(
     type='CocoMetric',
-    ann_file='../dataset_info_coco.json',
+    ann_file='../val_dataset_info_coco.json',
     metric=['bbox', 'segm'],
     backend_args=None)
 test_evaluator = dict(
     type='CocoMetric',
-    ann_file='../dataset_info_coco.json',
+    ann_file='../test_dataset_info_coco.json',
     metric=['bbox', 'segm'],
-    backend_args=None)
+    backend_args=None,
+    classwise=True)
 train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=12, val_interval=1)
 val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
@@ -160,7 +166,7 @@ param_scheduler = [
 optim_wrapper = dict(
     type='OptimWrapper',
     optimizer=dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001))
-auto_scale_lr = dict(enable=False, base_batch_size=16)
+auto_scale_lr = dict(enable=False, base_batch_size=8)
 model = dict(
     type='MaskRCNN',
     data_preprocessor=dict(
