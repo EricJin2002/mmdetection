@@ -17,3 +17,11 @@ python tools/test.py checkpoints/customized_mask-rcnn_r101_fpn_ms-poly-3x_coco.p
 ```sh
 python tools/train.py checkpoints/customized_mask-rcnn_r101_fpn_ms-poly-3x_coco.py --auto-scale-lr
 ```
+
+### 备忘
+
+以下命令在后台执行 root 目录下的 runoob.sh 脚本，并重定向输入到 runoob.log 文件：
+
+```sh
+nohup /root/runoob.sh > runoob.log 2>&1 &
+```

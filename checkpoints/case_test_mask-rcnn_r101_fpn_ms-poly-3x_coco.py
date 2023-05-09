@@ -1,5 +1,8 @@
 custom_imports = dict(imports=['checkpoints.custom_transforms'], allow_failed_imports=False)
-load_from = 'checkpoints/mask_rcnn_r101_fpn_mstrain-poly_3x_coco_20210524_200244-5675c317.pth'
+
+ann_file_var = "dataset_info_coco_worst_case.json"
+
+
 
 default_scope = 'mmdet'
 default_hooks = dict(
@@ -25,20 +28,6 @@ resume = False
 dataset_type = 'CocoDataset'
 data_root = '..'
 backend_args = None
-train_pipeline = [
-    dict(type='LoadImageFromFile', backend_args=None),
-    dict(
-        type='LoadAnnotations',
-        with_bbox=True,
-        with_mask=True,
-        poly2mask=True),
-    dict(
-        type='RandomResize', scale=[(1333, 640), (1333, 800)],
-        keep_ratio=True),
-    dict(type='RandomFlip', prob=0.5),
-    dict(type='LoadProposalsFromAnnotations'),
-    dict(type='PackDetInputs')
-]
 test_pipeline = [
     dict(type='LoadImageFromFile', backend_args=None),
     dict(type='Resize', scale=(1333, 800), keep_ratio=True),
@@ -53,64 +42,6 @@ test_pipeline = [
         meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
                    'scale_factor'))
 ]
-train_dataloader = dict(
-    batch_size=2,
-    num_workers=2,
-    persistent_workers=True,
-    sampler=dict(type='DefaultSampler', shuffle=True),
-    batch_sampler=dict(type='AspectRatioBatchSampler'),
-    dataset=dict(
-        type='RepeatDataset',
-        times=3,
-        dataset=dict(
-            type='CocoDataset',
-            data_root='..',
-            ann_file='train_dataset_info_coco_28.json',
-            data_prefix=dict(img=''),
-            filter_cfg=dict(filter_empty_gt=True, min_size=32),
-            pipeline=[
-                dict(type='LoadImageFromFile', backend_args=None),
-                dict(
-                    type='LoadAnnotations',
-                    with_bbox=True,
-                    with_mask=True,
-                    poly2mask=True),
-                dict(
-                    type='RandomResize',
-                    scale=[(1333, 640), (1333, 800)],
-                    keep_ratio=True),
-                dict(type='RandomFlip', prob=0.5),
-                dict(type='LoadProposalsFromAnnotations'),
-                dict(type='PackDetInputs')
-            ],
-            backend_args=None)))
-val_dataloader = dict(
-    batch_size=2,
-    num_workers=2,
-    persistent_workers=True,
-    drop_last=False,
-    sampler=dict(type='DefaultSampler', shuffle=False),
-    dataset=dict(
-        type='CocoDataset',
-        data_root='..',
-        ann_file='val_dataset_info_coco_28.json',
-        data_prefix=dict(img=''),
-        test_mode=True,
-        pipeline=[
-            dict(type='LoadImageFromFile', backend_args=None),
-            dict(type='Resize', scale=(1333, 800), keep_ratio=True),
-            dict(
-                type='LoadAnnotations',
-                with_bbox=True,
-                with_mask=True,
-                poly2mask=True),
-            dict(type='LoadProposalsFromAnnotations'),
-            dict(
-                type='PackDetInputs',
-                meta_keys=('img_id', 'img_path', 'ori_shape', 'img_shape',
-                           'scale_factor'))
-        ],
-        backend_args=None))
 test_dataloader = dict(
     batch_size=2,
     num_workers=2,
@@ -119,8 +50,8 @@ test_dataloader = dict(
     sampler=dict(type='DefaultSampler', shuffle=False),
     dataset=dict(
         type='CocoDataset',
-        data_root='..',
-        ann_file='test_dataset_info_coco_28.json',
+        data_root='../',
+        ann_file=ann_file_var,
         data_prefix=dict(img=''),
         test_mode=True,
         pipeline=[
@@ -138,35 +69,13 @@ test_dataloader = dict(
                            'scale_factor'))
         ],
         backend_args=None))
-val_evaluator = dict(
-    type='CocoMetric',
-    ann_file='../val_dataset_info_coco_28.json',
-    metric=['bbox', 'segm'],
-    backend_args=None)
 test_evaluator = dict(
     type='CocoMetric',
-    ann_file='../test_dataset_info_coco_28.json',
+    ann_file='../'+ann_file_var,
     metric=['bbox', 'segm'],
     backend_args=None,
     classwise=True)
-train_cfg = dict(type='EpochBasedTrainLoop', max_epochs=12, val_interval=1)
-val_cfg = dict(type='ValLoop')
 test_cfg = dict(type='TestLoop')
-param_scheduler = [
-    dict(
-        type='LinearLR', start_factor=0.001, by_epoch=False, begin=0, end=500),
-    dict(
-        type='MultiStepLR',
-        begin=0,
-        end=12,
-        by_epoch=True,
-        milestones=[9, 11],
-        gamma=0.1)
-]
-optim_wrapper = dict(
-    type='OptimWrapper',
-    optimizer=dict(type='SGD', lr=0.02, momentum=0.9, weight_decay=0.0001))
-auto_scale_lr = dict(enable=False, base_batch_size=8)
 model = dict(
     type='MaskRCNN',
     data_preprocessor=dict(
@@ -220,7 +129,7 @@ model = dict(
             in_channels=256,
             fc_out_channels=1024,
             roi_feat_size=7,
-            num_classes=27,
+            num_classes=80,
             bbox_coder=dict(
                 type='DeltaXYWHBBoxCoder',
                 target_means=[0.0, 0.0, 0.0, 0.0],
@@ -239,7 +148,7 @@ model = dict(
             num_convs=4,
             in_channels=256,
             conv_out_channels=256,
-            num_classes=27,
+            num_classes=80,
             loss_mask=dict(
                 type='CrossEntropyLoss', use_mask=True, loss_weight=1.0))),
     train_cfg=dict(
